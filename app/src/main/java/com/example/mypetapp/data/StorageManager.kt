@@ -1,0 +1,23 @@
+package com.example.mypetapp.data
+
+import android.net.Uri
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
+import java.util.UUID
+
+class StorageManager {
+    private val storage = FirebaseStorage.getInstance()
+    private val storageRef = storage.reference
+
+    suspend fun uploadPetImage(uri: Uri): String {
+        return try {
+            val fileName = "pet_images/${UUID.randomUUID()}.jpg"
+            val imageRef = storageRef.child(fileName)
+            imageRef.putFile(uri).await()
+            imageRef.downloadUrl.await().toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ""
+        }
+    }
+}

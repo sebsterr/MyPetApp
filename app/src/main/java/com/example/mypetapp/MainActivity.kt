@@ -1,79 +1,92 @@
 package com.example.mypetapp
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
-import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.mypetapp.screens.*
+import com.example.mypetapp.viewmodel.PetViewModel
 
 class MainActivity : ComponentActivity() {
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             MaterialTheme {
+                val viewModel: PetViewModel = viewModel()
                 val navController = rememberNavController()
-                val pets = remember { mutableStateListOf<Pet>() }
-                val currentUserProfile = remember { mutableStateOf(UserProfile(name = "")) }
+                val currentUser by viewModel.currentUser.collectAsState()
+                val pets by viewModel.pets.collectAsState()
 
                 NavHost(
                     navController = navController,
-                    startDestination = "login"
+                    startDestination = if (currentUser == null) "login" else "pets"
                 ) {
-
                     composable("login") {
                         LoginScreen(
-                            onLoginClick = { username: String ->
-                                currentUserProfile.value = UserProfile(name = username)
+                            onLoginSuccess = {
                                 navController.navigate("pets") {
                                     popUpTo("login") { inclusive = true }
                                 }
-                            }
+                            },
+                            viewModel = viewModel
                         )
                     }
-
 
                     composable("pets") {
                         PetProfilesScreen(
                             pets = pets,
-                            userProfile = currentUserProfile.value,
+                            userEmail = currentUser?.email ?: "User",
                             onAddPetClick = {
                                 navController.navigate("addPet")
                             },
-                            onPetClick = { index ->
-                                navController.navigate("petDetails/$index")
+                            onPetClick = { petId ->
+                                navController.navigate("petDetails/$petId")
+                            },
+                            onLogout = {
+                                viewModel.logout {
+                                    navController.navigate("login") {
+                                        popUpTo("pets") { inclusive = true }
+                                    }
+                                }
                             }
                         )
                     }
 
                     composable("addPet") {
                         AddPetScreen(
-                            onSave = { newPet: Pet ->
-                                pets.add(newPet)
+
+                            onSave = { name, type, breed, date, weight, uri ->
+                                viewModel.addPet(name, type, breed, date, weight, uri)
                                 navController.popBackStack()
                             }
                         )
                     }
 
                     composable(
-                        route = "petDetails/{index}",
-                        arguments = listOf(navArgument("index") { type = NavType.IntType })
+                        route = "petDetails/{petId}",
+                        arguments = listOf(navArgument("petId") { type = NavType.StringType })
                     ) { backStackEntry ->
-                        val index = backStackEntry.arguments?.getInt("index") ?: 0
-                        PetDetailsScreen(
-                            pet = pets[index],
-                            onEdit = { updatedPet: Pet ->
-                                pets[index] = updatedPet
-                            }
-                        )
+                        val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                        val pet = pets.find { it.id == petId }
+                        if (pet != null) {
+                            PetDetailsScreen(
+                                pet = pet,
+                                onEdit = { updatedPet ->
+                                    viewModel.updatePet(updatedPet)
+                                },
+                                onDelete = {
+                                    viewModel.deletePet(petId)
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
                     }
                 }
             }

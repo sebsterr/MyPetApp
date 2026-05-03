@@ -1,10 +1,9 @@
 package com.example.mypetapp.screens
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -12,85 +11,73 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import java.time.LocalDate
-import java.time.Period
+import coil.compose.AsyncImage
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PetDetailsScreen(
     pet: Pet,
-    onEdit: (Pet) -> Unit
+    onEdit: (Pet) -> Unit,
+    onDelete: () -> Unit
 ) {
-    var isEditing by remember { mutableStateOf(false) }
-
-    if (isEditing) {
-        AddPetScreen(
-            onSave = { updatedPet: Pet ->
-                // Update original pet
-                pet.name = updatedPet.name
-                pet.type = updatedPet.type
-                pet.breed = updatedPet.breed
-                pet.birthDate = updatedPet.birthDate
-                pet.weight = updatedPet.weight
-                pet.imageBitmap = updatedPet.imageBitmap
-
-                onEdit(pet)
-                isEditing = false
-            },
-            existingPet = pet
-        )
-    } else {
-        val age = Period.between(pet.birthDate, LocalDate.now())
-
-        Column(
-
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
-            Text("Pet Details", fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (pet.imageBitmap != null) {
-                Image(
-                    bitmap = pet.imageBitmap!!.asImageBitmap(),
-                    contentDescription = "Pet Image",
-                    modifier = Modifier
-                        .size(200.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+            Text("Detalii Animal", style = MaterialTheme.typography.headlineMedium)
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Șterge", tint = MaterialTheme.colorScheme.error)
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-            DetailRow("Name", pet.name)
-            DetailRow("Type", pet.type)
-            DetailRow("Breed", pet.breed)
-            DetailRow("Age", "${age.years} years, ${age.months} months")
-            DetailRow("Weight", "${pet.weight} kg")
+        // Afișăm imaginea din Cloud URL
+        AsyncImage(
+            model = if (pet.imageUrl.isNotEmpty()) pet.imageUrl else android.R.drawable.ic_menu_report_image,
+            contentDescription = "Pet Image",
+            modifier = Modifier
+                .size(160.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
 
-            Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = { isEditing = true },
-                modifier = Modifier
-                    .width(200.dp)
-                    .height(40.dp)
-            ) {
-                Text("Edit Pet")
-            }
+        DetailRow("Nume", pet.name)
+        DetailRow("Tip", pet.type)
+        DetailRow("Rasă", pet.breed)
+        DetailRow("Data Nașterii", pet.birthDate)
+        DetailRow("Greutate", "${pet.weight} kg")
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = { /* Editare viitoare */ },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = false
+        ) {
+            Text("Editează (Coming Soon)")
         }
     }
 }
 
 @Composable
 fun DetailRow(label: String, value: String) {
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(label, fontSize = 14.sp)
-    Text(value, fontSize = 18.sp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        Text(value, style = MaterialTheme.typography.bodyLarge)
+        HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 0.5.dp)
+    }
 }

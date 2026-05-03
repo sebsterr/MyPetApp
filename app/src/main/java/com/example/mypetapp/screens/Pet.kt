@@ -1,13 +1,12 @@
 package com.example.mypetapp.screens
 
-import android.graphics.Bitmap
-import java.time.LocalDate
-
 data class Pet(
-    var name: String,
-    var type: String,
-    var breed: String,
-    var birthDate: LocalDate,
-    var weight: Double,
-    var imageBitmap: Bitmap? = null
+    val id: String = "",
+    val name: String = "",
+    val type: String = "",
+    val breed: String = "",
+    val birthDate: String = "",
+    val weight: Double = 0.0,
+    val ownerId: String = "",
+    val imageUrl: String = "" // Adăugăm URL-ul imaginii din Cloud Storage
 )
