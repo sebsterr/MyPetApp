@@ -24,15 +24,16 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPetScreen(
+    existingPet: Pet? = null,
     onSave: (String, String, String, String, Double, Uri?) -> Unit
 ) {
     val context = LocalContext.current
 
-    var name by remember { mutableStateOf("") }
-    var breed by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("Dog") }
-    var birthDate by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(existingPet?.name ?: "") }
+    var breed by remember { mutableStateOf(existingPet?.breed ?: "") }
+    var weight by remember { mutableStateOf(existingPet?.weight?.toString() ?: "") }
+    var selectedType by remember { mutableStateOf(existingPet?.type ?: "Dog") }
+    var birthDate by remember { mutableStateOf(existingPet?.birthDate ?: "") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
     val petTypes = listOf("Dog", "Cat", "Hamster", "Parrot")
@@ -40,9 +41,7 @@ fun AddPetScreen(
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        imageUri = uri
-    }
+    ) { uri: Uri? -> imageUri = uri }
 
     Column(
         modifier = Modifier
@@ -53,7 +52,7 @@ fun AddPetScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Selector Imagine
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,4 +166,16 @@ fun AddPetScreen(
             Text("Salvează în Cloud")
         }
     }
+    Button(
+        onClick = {
+            val w = weight.toDoubleOrNull() ?: 0.0
+            if (name.isNotBlank() && birthDate.isNotBlank()) {
+                onSave(name, selectedType, breed, birthDate, w, imageUri)
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(if (existingPet == null) "Salvează în Cloud" else "Actualizează Animal")
+    }
 }
+

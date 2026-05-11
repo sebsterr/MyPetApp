@@ -16,10 +16,14 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     viewModel: PetViewModel
 ) {
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var fullName by remember { mutableStateOf("") }
+    var isRegisterMode by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
+
+
     val isLoading by viewModel.isLoading.collectAsState()
 
     Column(
@@ -29,9 +33,24 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("MyPetApp 🐾", fontSize = 32.sp, color = MaterialTheme.colorScheme.primary)
+        Text(
+            text = if (isRegisterMode) "Creează Cont" else "Conectare",
+            fontSize = 28.sp,
+            color = MaterialTheme.colorScheme.primary
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
+
+        if (isRegisterMode) {
+            OutlinedTextField(
+                value = fullName,
+                onValueChange = { fullName = it },
+                label = { Text("Nume Complet") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         OutlinedTextField(
             value = email,
@@ -52,8 +71,13 @@ fun LoginScreen(
             singleLine = true
         )
 
-        if (errorMessage != null) {
-            Text(errorMessage!!, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+        errorMessage?.let {
+            Text(
+                text = it,
+                color = Color.Red,
+                modifier = Modifier.padding(top = 8.dp),
+                fontSize = 14.sp
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -63,23 +87,41 @@ fun LoginScreen(
         } else {
             Button(
                 onClick = {
-                    viewModel.login(email, password, onLoginSuccess) { error ->
-                        errorMessage = error
+                    errorMessage = null
+
+                    if (isRegisterMode) {
+
+                        viewModel.register(email, password, fullName) { success ->
+                            if (success) {
+                                onLoginSuccess()
+                            } else {
+                                errorMessage = "Eroare la înregistrare. Încearcă din nou."
+                            }
+                        }
+                    } else {
+
+                        viewModel.login(email, password) { success ->
+                            if (success) {
+                                onLoginSuccess()
+                            } else {
+                                errorMessage = "Email sau parolă incorectă."
+                            }
+                        }
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = email.isNotEmpty() && password.isNotEmpty()
             ) {
-                Text("Conectare")
+                Text(if (isRegisterMode) "Înregistrare" else "Conectare")
             }
 
             TextButton(
                 onClick = {
-                    viewModel.register(email, password, onLoginSuccess) { error ->
-                        errorMessage = error
-                    }
+                    isRegisterMode = !isRegisterMode
+                    errorMessage = null
                 }
             ) {
-                Text("Nu ai cont? Înregistrează-te")
+                Text(if (isRegisterMode) "Ai deja cont? Loghează-te" else "Nu ai cont? Creează unul")
             }
         }
     }

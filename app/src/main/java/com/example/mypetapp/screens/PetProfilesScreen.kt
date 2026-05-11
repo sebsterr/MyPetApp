@@ -73,7 +73,7 @@ fun PetProfilesScreen(
                             verticalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            // Folosim AsyncImage pentru a încărca poza din URL-ul de Firebase
+
                             AsyncImage(
                                 model = if (pet.imageUrl.isNotEmpty()) pet.imageUrl else android.R.drawable.ic_menu_report_image,
                                 contentDescription = "Pet Image",

@@ -14,10 +14,22 @@ class StorageManager {
             val fileName = "pet_images/${UUID.randomUUID()}.jpg"
             val imageRef = storageRef.child(fileName)
             imageRef.putFile(uri).await()
-            imageRef.downloadUrl.await().toString()
+            val downloadUrl = imageRef.downloadUrl.await()
+            downloadUrl.toString()
         } catch (e: Exception) {
             e.printStackTrace()
             ""
+        }
+    }
+    suspend fun deleteImage(imageUrl: String) {
+        if (imageUrl.isEmpty()) return
+        try {
+
+            val storageRef = FirebaseStorage.getInstance().getReferenceFromUrl(imageUrl)
+            storageRef.delete().await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+
         }
     }
 }

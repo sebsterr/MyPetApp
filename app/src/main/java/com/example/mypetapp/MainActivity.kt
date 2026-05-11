@@ -43,9 +43,7 @@ class MainActivity : ComponentActivity() {
                         PetProfilesScreen(
                             pets = pets,
                             userEmail = currentUser?.email ?: "User",
-                            onAddPetClick = {
-                                navController.navigate("addPet")
-                            },
+                            onAddPetClick = { navController.navigate("addPet") },
                             onPetClick = { petId ->
                                 navController.navigate("petDetails/$petId")
                             },
@@ -60,32 +58,42 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("addPet") {
-                        AddPetScreen(
-
-                            onSave = { name, type, breed, date, weight, uri ->
-                                viewModel.addPet(name, type, breed, date, weight, uri)
-                                navController.popBackStack()
-                            }
-                        )
+                        AddPetScreen(existingPet = null) { name, type, breed, date, weight, uri ->
+                            viewModel.addPet(name, type, breed, date, weight, uri)
+                            navController.popBackStack()
+                        }
                     }
-
                     composable(
                         route = "petDetails/{petId}",
                         arguments = listOf(navArgument("petId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId") ?: ""
                         val pet = pets.find { it.id == petId }
+
                         if (pet != null) {
                             PetDetailsScreen(
                                 pet = pet,
-                                onEdit = { updatedPet ->
-                                    viewModel.updatePet(updatedPet)
-                                },
+                                onEdit = { navController.navigate("editPet/${pet.id}") },
                                 onDelete = {
                                     viewModel.deletePet(petId)
                                     navController.popBackStack()
                                 }
                             )
+                        }
+                    }
+
+                    composable(
+                        route = "editPet/{petId}",
+                        arguments = listOf(navArgument("petId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                        val pet = pets.find { it.id == petId }
+
+                        AddPetScreen(existingPet = pet) { name, type, breed, date, weight, uri ->
+                            if (pet != null) {
+                                viewModel.updatePet(pet.id, name, type, breed, date, weight, uri, pet.imageUrl)
+                                navController.popBackStack()
+                            }
                         }
                     }
                 }

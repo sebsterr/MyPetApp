@@ -8,5 +8,5 @@ data class Pet(
     val birthDate: String = "",
     val weight: Double = 0.0,
     val ownerId: String = "",
-    val imageUrl: String = "" // Adăugăm URL-ul imaginii din Cloud Storage
+    val imageUrl: String = ""
 )

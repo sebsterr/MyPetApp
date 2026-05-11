@@ -10,6 +10,20 @@ import kotlinx.coroutines.tasks.await
 class FirestoreManager {
     private val firestore = FirebaseFirestore.getInstance()
     private val petsCollection = firestore.collection("pets")
+    private val usersCollection = firestore.collection("users")
+
+    suspend fun createUserProfile(userId: String, email: String, name: String) {
+        try {
+            val userProfile = hashMapOf(
+                "fullName" to name,
+                "email" to email,
+                "ownerId" to userId
+            )
+            usersCollection.document(userId).set(userProfile).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     fun getPets(userId: String): Flow<List<Pet>> = callbackFlow {
         val subscription = petsCollection
@@ -54,4 +68,5 @@ class FirestoreManager {
             e.printStackTrace()
         }
     }
+
 }

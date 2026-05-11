@@ -7,11 +7,7 @@ import com.example.mypetapp.data.AuthManager
 import com.example.mypetapp.data.FirestoreManager
 import com.example.mypetapp.data.StorageManager
 import com.example.mypetapp.screens.Pet
-import com.google.firebase.auth.FirebaseUser
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class PetViewModel : ViewModel() {
@@ -19,93 +15,104 @@ class PetViewModel : ViewModel() {
     private val firestoreManager = FirestoreManager()
     private val storageManager = StorageManager()
 
-    private val _currentUser = MutableStateFlow<FirebaseUser?>(authManager.currentUser)
-    val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
+    private val _currentUser = MutableStateFlow(authManager.currentUser)
+    val currentUser = _currentUser.asStateFlow()
 
-    private val _pets = MutableStateFlow<List<Pet>>(emptyList())
-    val pets: StateFlow<List<Pet>> = _pets.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        observePets()
-    }
 
-    private fun observePets() {
-        viewModelScope.launch {
-            currentUser.collectLatest { user ->
-                if (user != null) {
-                    firestoreManager.getPets(user.uid).collect { petList ->
-                        _pets.value = petList
-                    }
-                } else {
-                    _pets.value = emptyList()
-                }
-            }
-        }
-    }
+    val pets: StateFlow<List<Pet>> = currentUser
+        .flatMapLatest { user ->
+            if (user != null) firestoreManager.getPets(user.uid)
+            else flowOf(emptyList())
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun login(email: String, pass: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val result = authManager.login(email, pass)
-            _isLoading.value = false
-            result.onSuccess {
-                _currentUser.value = it
-                onSuccess()
-            }.onFailure {
-                onError(it.message ?: "A apărut o eroare la autentificare")
-            }
-        }
-    }
-
-    fun register(email: String, pass: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun register(email: String, pass: String, name: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
             val result = authManager.register(email, pass)
-            _isLoading.value = false
-            result.onSuccess {
-                _currentUser.value = it
-                onSuccess()
-            }.onFailure {
-                onError(it.message ?: "A apărut o eroare la înregistrare")
+            if (result.isSuccess) {
+                val user = result.getOrNull()
+                if (user != null) {
+                    firestoreManager.createUserProfile(user.uid, email, name)
+                    _currentUser.value = user
+                    onResult(true)
+                } else {
+                    onResult(false)
+                }
+            } else {
+                onResult(false)
             }
+            _isLoading.value = false
         }
     }
 
-    fun logout(onSuccess: () -> Unit) {
-        authManager.logout()
-        _currentUser.value = null
-        onSuccess()
-    }
-
-    fun addPet(name: String, type: String, breed: String, birthDate: String, weight: Double, imageUri: Uri?) {
-        val userId = currentUser.value?.uid ?: return
+    fun login(email: String, pass: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
             _isLoading.value = true
-            var uploadedImageUrl = ""
-            if (imageUri != null) {
-                uploadedImageUrl = storageManager.uploadPetImage(imageUri)
+            val result = authManager.login(email, pass)
+            if (result.isSuccess) {
+                _currentUser.value = result.getOrNull()
+                onResult(true)
+            } else {
+                onResult(false)
             }
-            
+            _isLoading.value = false
+        }
+    }
+
+    fun addPet(name: String, type: String, breed: String, date: String, weight: Double, uri: Uri?) {
+        viewModelScope.launch {
+            val userId = currentUser.value?.uid ?: return@launch
+
+            _isLoading.value = true
+            val imageUrl = if (uri != null) storageManager.uploadPetImage(uri) else ""
+
             val newPet = Pet(
+                id = "",
                 name = name,
                 type = type,
                 breed = breed,
-                birthDate = birthDate,
-                weight = weight,
+                birthDate = date,
+                weight = weight.toDouble(),
                 ownerId = userId,
-                imageUrl = uploadedImageUrl
+                imageUrl = imageUrl
             )
             firestoreManager.addPet(newPet)
             _isLoading.value = false
         }
     }
-
-    fun updatePet(pet: Pet) {
+    fun updatePet(petId: String, name: String, type: String, breed: String, date: String, weight: Double, newUri: Uri?, oldImageUrl: String) {
         viewModelScope.launch {
-            firestoreManager.updatePet(pet)
+            _isLoading.value = true
+
+            var finalImageUrl = oldImageUrl
+
+
+            if (newUri != null) {
+
+                if (oldImageUrl.isNotEmpty()) {
+                    storageManager.deleteImage(oldImageUrl)
+                }
+
+                finalImageUrl = storageManager.uploadPetImage(newUri)
+            }
+
+            val updatedPet = Pet(
+                id = petId,
+                name = name,
+                type = type,
+                breed = breed,
+                birthDate = date,
+                weight = weight,
+                ownerId = currentUser.value?.uid ?: "",
+                imageUrl = finalImageUrl
+            )
+
+            firestoreManager.updatePet(updatedPet)
+            _isLoading.value = false
         }
     }
 
@@ -113,5 +120,11 @@ class PetViewModel : ViewModel() {
         viewModelScope.launch {
             firestoreManager.deletePet(petId)
         }
+    }
+
+    fun logout(onComplete: () -> Unit) {
+        authManager.logout()
+        _currentUser.value = null
+        onComplete()
     }
 }

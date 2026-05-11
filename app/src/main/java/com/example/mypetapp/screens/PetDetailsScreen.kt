@@ -39,7 +39,6 @@ fun PetDetailsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Afișăm imaginea din Cloud URL
         AsyncImage(
             model = if (pet.imageUrl.isNotEmpty()) pet.imageUrl else android.R.drawable.ic_menu_report_image,
             contentDescription = "Pet Image",
@@ -60,11 +59,10 @@ fun PetDetailsScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
-            onClick = { /* Editare viitoare */ },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = false
+            onClick = { onEdit(pet) },
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Editează (Coming Soon)")
+            Text("Editează Profil")
         }
     }
 }
