@@ -4,19 +4,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.example.mypetapp.screens.Pet
 
 @Composable
 fun PetDetailsScreen(
     pet: Pet,
+    navController: NavController,
     onEdit: (Pet) -> Unit,
     onDelete: () -> Unit
 ) {
@@ -59,6 +62,19 @@ fun PetDetailsScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
+            onClick = {
+
+                navController.navigate("feedingSchedule/${pet.id}/${pet.name}")
+            },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+        ) {
+            Icon(Icons.Default.Notifications, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Program Hrănire & Notificări")
+        }
+
+        Button(
             onClick = { onEdit(pet) },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -66,7 +82,6 @@ fun PetDetailsScreen(
         }
     }
 }
-
 @Composable
 fun DetailRow(label: String, value: String) {
     Column(
@@ -74,8 +89,18 @@ fun DetailRow(label: String, value: String) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        Text(value, style = MaterialTheme.typography.bodyLarge)
-        HorizontalDivider(modifier = Modifier.padding(top = 4.dp), thickness = 0.5.dp)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        HorizontalDivider(
+            modifier = Modifier.padding(top = 4.dp),
+            thickness = 0.5.dp
+        )
     }
 }

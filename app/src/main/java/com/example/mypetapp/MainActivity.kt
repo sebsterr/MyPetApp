@@ -11,6 +11,7 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.mypetapp.screens.*
 import com.example.mypetapp.viewmodel.PetViewModel
+import com.example.mypetapp.viewmodel.FeedingViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -20,6 +21,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 val viewModel: PetViewModel = viewModel()
+                val feedingViewModel: FeedingViewModel = viewModel()
                 val navController = rememberNavController()
                 val currentUser by viewModel.currentUser.collectAsState()
                 val pets by viewModel.pets.collectAsState()
@@ -63,6 +65,7 @@ class MainActivity : ComponentActivity() {
                             navController.popBackStack()
                         }
                     }
+
                     composable(
                         route = "petDetails/{petId}",
                         arguments = listOf(navArgument("petId") { type = NavType.StringType })
@@ -73,6 +76,7 @@ class MainActivity : ComponentActivity() {
                         if (pet != null) {
                             PetDetailsScreen(
                                 pet = pet,
+                                navController = navController,
                                 onEdit = { navController.navigate("editPet/${pet.id}") },
                                 onDelete = {
                                     viewModel.deletePet(petId)
@@ -95,6 +99,24 @@ class MainActivity : ComponentActivity() {
                                 navController.popBackStack()
                             }
                         }
+                    }
+
+
+                    composable(
+                        route = "feedingSchedule/{petId}/{petName}",
+                        arguments = listOf(
+                            navArgument("petId") { type = NavType.StringType },
+                            navArgument("petName") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                        val petName = backStackEntry.arguments?.getString("petName") ?: ""
+
+                        FeedingScheduleScreen(
+                            petId = petId,
+                            petName = petName,
+                            viewModel = feedingViewModel
+                        )
                     }
                 }
             }

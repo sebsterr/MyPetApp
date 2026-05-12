@@ -48,7 +48,7 @@ fun AddPetScreen(
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        Text("Adaugă un animal", fontSize = 24.sp, style = MaterialTheme.typography.headlineMedium)
+        Text(if (existingPet == null) "Adaugă un animal" else "Actualizează Animal", fontSize = 24.sp, style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -166,16 +166,6 @@ fun AddPetScreen(
             Text("Salvează în Cloud")
         }
     }
-    Button(
-        onClick = {
-            val w = weight.toDoubleOrNull() ?: 0.0
-            if (name.isNotBlank() && birthDate.isNotBlank()) {
-                onSave(name, selectedType, breed, birthDate, w, imageUri)
-            }
-        },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(if (existingPet == null) "Salvează în Cloud" else "Actualizează Animal")
-    }
+
 }
 
