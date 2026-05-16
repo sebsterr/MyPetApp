@@ -51,13 +51,13 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
-
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
-
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     // Image Loading
     implementation(libs.coil.compose)
 

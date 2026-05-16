@@ -34,7 +34,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = if (isRegisterMode) "Creează Cont" else "Conectare",
+            text = if (isRegisterMode) "Create Account" else "Login",
             fontSize = 28.sp,
             color = MaterialTheme.colorScheme.primary
         )
@@ -45,7 +45,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = fullName,
                 onValueChange = { fullName = it },
-                label = { Text("Nume Complet") },
+                label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -65,7 +65,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Parolă") },
+            label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
@@ -95,7 +95,7 @@ fun LoginScreen(
                             if (success) {
                                 onLoginSuccess()
                             } else {
-                                errorMessage = "Eroare la înregistrare. Încearcă din nou."
+                                errorMessage = "Registration error. Try again."
                             }
                         }
                     } else {
@@ -104,7 +104,7 @@ fun LoginScreen(
                             if (success) {
                                 onLoginSuccess()
                             } else {
-                                errorMessage = "Email sau parolă incorectă."
+                                errorMessage = "Incorrect email or password."
                             }
                         }
                     }
@@ -112,7 +112,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = email.isNotEmpty() && password.isNotEmpty()
             ) {
-                Text(if (isRegisterMode) "Înregistrare" else "Conectare")
+                Text(if (isRegisterMode) "Sign Up" else "Login")
             }
 
             TextButton(
@@ -121,7 +121,7 @@ fun LoginScreen(
                     errorMessage = null
                 }
             ) {
-                Text(if (isRegisterMode) "Ai deja cont? Loghează-te" else "Nu ai cont? Creează unul")
+                Text(if (isRegisterMode) "Already have an account? Login" else "Don't have an account? Create one")
             }
         }
     }

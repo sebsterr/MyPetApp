@@ -39,7 +39,42 @@ class FeedingViewModel : ViewModel() {
                 scheduleAlarm(context, task, petName)
             }
     }
-    fun deleteFeedingTask(petId: String, taskId: String) {
+    fun saveFeedingTask(
+        context: Context,
+        petId: String,
+        petName: String,
+        time: String,
+        food: String,
+        quantity: String,
+        existingTaskId: String? = null
+    ) {
+
+        val taskId = existingTaskId ?: db.collection("pets").document(petId).collection("feeding_schedule").document().id
+        val task = FeedingTask(taskId, petId, time, food, quantity)
+
+        db.collection("pets").document(petId)
+            .collection("feeding_schedule")
+            .document(taskId)
+            .set(task)
+            .addOnSuccessListener {
+                scheduleAlarm(context, task, petName)
+            }
+    }
+    fun deleteFeedingTask(context: Context, petId: String, taskId: String) {
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, FeedingReceiver::class.java)
+
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            taskId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.cancel(pendingIntent)
+
         db.collection("pets").document(petId)
             .collection("feeding_schedule")
             .document(taskId)

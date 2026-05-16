@@ -50,7 +50,7 @@ fun PetProfilesScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Animalele mele", style = MaterialTheme.typography.headlineSmall)
+            Text("My Pets", style = MaterialTheme.typography.headlineSmall)
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyVerticalGrid(

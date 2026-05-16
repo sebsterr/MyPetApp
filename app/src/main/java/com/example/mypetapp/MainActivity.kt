@@ -10,8 +10,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.mypetapp.screens.*
+import com.example.mypetapp.viewmodel.AiViewModel
 import com.example.mypetapp.viewmodel.PetViewModel
 import com.example.mypetapp.viewmodel.FeedingViewModel
+import com.example.mypetapp.viewmodel.WeightViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -22,6 +24,9 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 val viewModel: PetViewModel = viewModel()
                 val feedingViewModel: FeedingViewModel = viewModel()
+                val weightViewModel: WeightViewModel = viewModel()
+                val aiViewModel: AiViewModel = viewModel()
+
                 val navController = rememberNavController()
                 val currentUser by viewModel.currentUser.collectAsState()
                 val pets by viewModel.pets.collectAsState()
@@ -60,8 +65,8 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("addPet") {
-                        AddPetScreen(existingPet = null) { name, type, breed, date, weight, uri ->
-                            viewModel.addPet(name, type, breed, date, weight, uri)
+                        AddPetScreen(existingPet = null) { name, type, breed, date, weight, gender, isNeutered, uri ->
+                            viewModel.addPet(name, type, breed, date, weight, gender, isNeutered, uri)
                             navController.popBackStack()
                         }
                     }
@@ -71,13 +76,14 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("petId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId") ?: ""
-                        val pet = pets.find { it.id == petId }
+
+                        val pet = remember(pets, petId) { pets.find { it.id == petId } }
 
                         if (pet != null) {
                             PetDetailsScreen(
                                 pet = pet,
                                 navController = navController,
-                                onEdit = { navController.navigate("editPet/${pet.id}") },
+                                onEdit = { selectedPet -> navController.navigate("editPet/${selectedPet.id}") },
                                 onDelete = {
                                     viewModel.deletePet(petId)
                                     navController.popBackStack()
@@ -87,20 +93,50 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable(
+                        route = "aiAssistant/{petId}",
+                        arguments = listOf(navArgument("petId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val petId = backStackEntry.arguments?.getString("petId") ?: ""
+                        val pet = pets.find { it.id == petId }
+
+                        val petName = pet?.name ?: "My Pet"
+
+                        val contextText = if (pet != null) {
+                            "The pet's name is ${pet.name}, it is a ${pet.type}, breed ${pet.breed}, gender ${pet.gender}, sterilization status: ${pet.isNeutered}, born on ${pet.birthDate}, and weighs ${pet.weight} kg."
+                        } else "Pet info not available."
+
+                        AiAssistantScreen(
+                            petName = petName,
+                            petContext = contextText,
+                            viewModel = aiViewModel
+                        )
+                    }
+
+                    composable(
                         route = "editPet/{petId}",
                         arguments = listOf(navArgument("petId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId") ?: ""
                         val pet = pets.find { it.id == petId }
 
-                        AddPetScreen(existingPet = pet) { name, type, breed, date, weight, uri ->
+                        AddPetScreen(existingPet = pet) { name, type, breed, date, weight, gender, isNeutered, uri ->
                             if (pet != null) {
-                                viewModel.updatePet(pet.id, name, type, breed, date, weight, uri, pet.imageUrl)
+                                viewModel.updatePet(
+                                    petId = pet.id,
+                                    name = name,
+                                    type = type,
+                                    breed = breed,
+                                    date = date,
+                                    weight = weight,
+                                    gender = gender,
+                                    isNeutered = isNeutered,
+                                    newUri = uri,
+                                    oldImageUrl = pet.imageUrl
+                                )
                                 navController.popBackStack()
                             }
                         }
                     }
-
 
                     composable(
                         route = "feedingSchedule/{petId}/{petName}",
@@ -116,6 +152,18 @@ class MainActivity : ComponentActivity() {
                             petId = petId,
                             petName = petName,
                             viewModel = feedingViewModel
+                        )
+                    }
+
+                    composable(
+                        route = "weightTracker/{petId}",
+                        arguments = listOf(navArgument("petId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val petId = backStackEntry.arguments?.getString("petId") ?: ""
+
+                        WeightTrackerScreen(
+                            petId = petId,
+                            viewModel = weightViewModel
                         )
                     }
                 }

@@ -18,10 +18,8 @@ class PetViewModel : ViewModel() {
     private val _currentUser = MutableStateFlow(authManager.currentUser)
     val currentUser = _currentUser.asStateFlow()
 
-
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
 
     val pets: StateFlow<List<Pet>> = currentUser
         .flatMapLatest { user ->
@@ -63,7 +61,7 @@ class PetViewModel : ViewModel() {
         }
     }
 
-    fun addPet(name: String, type: String, breed: String, date: String, weight: Double, uri: Uri?) {
+    fun addPet(name: String, type: String, breed: String, date: String, weight: Double, gender: String, isNeutered: String, uri: Uri?) {
         viewModelScope.launch {
             val userId = currentUser.value?.uid ?: return@launch
 
@@ -76,7 +74,9 @@ class PetViewModel : ViewModel() {
                 type = type,
                 breed = breed,
                 birthDate = date,
-                weight = weight.toDouble(),
+                weight = weight,
+                gender = gender,
+                isNeutered = isNeutered, // Se salvează textul direct ("Yes" / "No")
                 ownerId = userId,
                 imageUrl = imageUrl
             )
@@ -84,19 +84,17 @@ class PetViewModel : ViewModel() {
             _isLoading.value = false
         }
     }
-    fun updatePet(petId: String, name: String, type: String, breed: String, date: String, weight: Double, newUri: Uri?, oldImageUrl: String) {
+
+    fun updatePet(petId: String, name: String, type: String, breed: String, date: String, weight: Double, gender: String, isNeutered: String, newUri: Uri?, oldImageUrl: String) {
         viewModelScope.launch {
             _isLoading.value = true
 
             var finalImageUrl = oldImageUrl
 
-
             if (newUri != null) {
-
                 if (oldImageUrl.isNotEmpty()) {
                     storageManager.deleteImage(oldImageUrl)
                 }
-
                 finalImageUrl = storageManager.uploadPetImage(newUri)
             }
 
@@ -107,6 +105,8 @@ class PetViewModel : ViewModel() {
                 breed = breed,
                 birthDate = date,
                 weight = weight,
+                gender = gender,
+                isNeutered = isNeutered,
                 ownerId = currentUser.value?.uid ?: "",
                 imageUrl = finalImageUrl
             )

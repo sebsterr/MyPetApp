@@ -7,69 +7,78 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.mypetapp.screens.FeedingTask
+import androidx.compose.ui.unit.sp
 import com.example.mypetapp.viewmodel.FeedingViewModel
 import java.util.*
-import androidx.compose.ui.Alignment
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-
 fun FeedingScheduleScreen(
-petId: String,
-petName: String,
-viewModel: FeedingViewModel
+    petId: String,
+    petName: String,
+    viewModel: FeedingViewModel
 ) {
     val context = LocalContext.current
     val schedule by viewModel.schedule.collectAsState()
+
     var showDialog by remember { mutableStateOf(false) }
+    var editingTask by remember { mutableStateOf<FeedingTask?>(null) }
 
     LaunchedEffect(petId) {
         viewModel.getFeedingSchedule(petId)
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Program mese: $petName") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Feeding Schedule: $petName", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Adaugă masă")
+            FloatingActionButton(
+                onClick = {
+                    editingTask = null
+                    showDialog = true
+                },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add meal", tint = MaterialTheme.colorScheme.onPrimary)
             }
         }
     ) { padding ->
-        LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
-            items(schedule) { task ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Ora: ${task.time}", style = MaterialTheme.typography.titleLarge)
-                            Text(text = "${task.foodType} - ${task.quantity}")
+        if (schedule.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("No meals scheduled. Press +", color = MaterialTheme.colorScheme.outline)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                items(schedule) { task ->
+                    FeedingTaskCard(
+                        task = task,
+                        onEdit = {
+                            editingTask = task
+                            showDialog = true
+                        },
+                        onDelete = {
+                            viewModel.deleteFeedingTask(context, petId, task.id)
                         }
-
-                        IconButton(onClick = {
-                            viewModel.deleteFeedingTask(petId, task.id)
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Șterge masa",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
@@ -77,29 +86,100 @@ viewModel: FeedingViewModel
 
     if (showDialog) {
         AddFeedingDialog(
-            onDismiss = { showDialog = false },
-            onSave = { time, food, qty ->
-                viewModel.saveFeedingTask(context, petId, petName, time, food, qty)
+            existingTask = editingTask,
+            onDismiss = {
                 showDialog = false
+                editingTask = null
+            },
+            onSave = { time, food, qty, id ->
+                viewModel.saveFeedingTask(context, petId, petName, time, food, qty, id)
+                showDialog = false
+                editingTask = null
             }
         )
     }
 }
 
 @Composable
-fun AddFeedingDialog(onDismiss: () -> Unit, onSave: (String, String, String) -> Unit) {
-    var foodType by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("") }
-    var selectedTime by remember { mutableStateOf("08:00") }
+fun FeedingTaskCard(
+    task: FeedingTask,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = task.time,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "${task.foodType} • ${task.quantity}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddFeedingDialog(
+    existingTask: FeedingTask? = null,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String?) -> Unit
+) {
+    var foodType by remember { mutableStateOf(existingTask?.foodType ?: "") }
+    var quantity by remember { mutableStateOf(existingTask?.quantity ?: "") }
+    var selectedTime by remember { mutableStateOf(existingTask?.time ?: "08:00") }
     val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Programează o masă") },
+        title = { Text(if (existingTask == null) "Schedule a meal" else "Edit meal") },
         text = {
             Column {
-                OutlinedTextField(value = foodType, onValueChange = { foodType = it }, label = { Text("Tip mâncare") })
-                OutlinedTextField(value = quantity, onValueChange = { quantity = it }, label = { Text("Cantitate (ex: 50g)") })
+                OutlinedTextField(
+                    value = foodType,
+                    onValueChange = { foodType = it },
+                    label = { Text("Food type") }
+                )
+                OutlinedTextField(
+                    value = quantity,
+                    onValueChange = { quantity = it },
+                    label = { Text("Quantity") }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(onClick = {
                     val calendar = Calendar.getInstance()
@@ -107,15 +187,17 @@ fun AddFeedingDialog(onDismiss: () -> Unit, onSave: (String, String, String) -> 
                         selectedTime = String.format("%02d:%02d", hour, minute)
                     }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
                 }) {
-                    Text("Alege Ora: $selectedTime")
+                    Text("Time: $selectedTime")
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(selectedTime, foodType, quantity) }) { Text("Salvează") }
+            Button(onClick = { onSave(selectedTime, foodType, quantity, existingTask?.id) }) {
+                Text("Save")
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Anulează") }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }
