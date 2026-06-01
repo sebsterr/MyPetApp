@@ -20,6 +20,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val name = "Feeding Schedule"
+            val descriptionText = "Notifications for pet feeding times"
+            val importance = android.app.NotificationManager.IMPORTANCE_HIGH
+
+            val channel = android.app.NotificationChannel("PET_CARE_CHANNEL", name, importance).apply {
+                description = descriptionText
+            }
+
+            val notificationManager = getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
         setContent {
             MaterialTheme {
                 val viewModel: PetViewModel = viewModel()

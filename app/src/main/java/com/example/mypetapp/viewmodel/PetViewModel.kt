@@ -76,7 +76,7 @@ class PetViewModel : ViewModel() {
                 birthDate = date,
                 weight = weight,
                 gender = gender,
-                isNeutered = isNeutered, // Se salvează textul direct ("Yes" / "No")
+                isNeutered = isNeutered,
                 ownerId = userId,
                 imageUrl = imageUrl
             )

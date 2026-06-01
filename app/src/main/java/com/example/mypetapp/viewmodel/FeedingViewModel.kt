@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.*
 import android.os.Build
+import java.text.SimpleDateFormat
+
 class FeedingViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
 
@@ -27,18 +29,6 @@ class FeedingViewModel : ViewModel() {
             }
     }
 
-    fun saveFeedingTask(context: Context, petId: String, petName: String, time: String, food: String, quantity: String) {
-        val taskId = db.collection("pets").document(petId).collection("feeding_schedule").document().id
-        val task = FeedingTask(taskId, petId, time, food, quantity)
-
-        db.collection("pets").document(petId)
-            .collection("feeding_schedule")
-            .document(taskId)
-            .set(task)
-            .addOnSuccessListener {
-                scheduleAlarm(context, task, petName)
-            }
-    }
     fun saveFeedingTask(
         context: Context,
         petId: String,
@@ -46,11 +36,23 @@ class FeedingViewModel : ViewModel() {
         time: String,
         food: String,
         quantity: String,
+        type: String = "Feeding",
+        date: String = "",
+        recurrence: String = "None",
         existingTaskId: String? = null
     ) {
-
         val taskId = existingTaskId ?: db.collection("pets").document(petId).collection("feeding_schedule").document().id
-        val task = FeedingTask(taskId, petId, time, food, quantity)
+
+        val task = FeedingTask(
+            id = taskId,
+            petId = petId,
+            time = time,
+            foodType = food,
+            quantity = quantity,
+            type = type,
+            date = date,
+            recurrence = recurrence
+        )
 
         db.collection("pets").document(petId)
             .collection("feeding_schedule")
@@ -60,11 +62,10 @@ class FeedingViewModel : ViewModel() {
                 scheduleAlarm(context, task, petName)
             }
     }
-    fun deleteFeedingTask(context: Context, petId: String, taskId: String) {
 
+    fun deleteFeedingTask(context: Context, petId: String, taskId: String) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, FeedingReceiver::class.java)
-
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -80,6 +81,7 @@ class FeedingViewModel : ViewModel() {
             .document(taskId)
             .delete()
     }
+
     private fun scheduleAlarm(context: Context, task: FeedingTask, petName: String) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
@@ -93,8 +95,22 @@ class FeedingViewModel : ViewModel() {
             }
         }
 
+        val customTitle = when (task.type) {
+            "Visit" -> "Vet Appointment Tomorrow!"
+            "Vaccine" -> "Upcoming Vaccination Reminder"
+            else -> "Feeding Time for $petName"
+        }
+
+        val customMessage = when (task.type) {
+            "Visit" -> "Reminder: Tomorrow you have a doctor visit with $petName for '${task.foodType}'."
+            "Vaccine" -> "Reminder: Tomorrow $petName needs the vaccine: '${task.foodType}'."
+            else -> "It's time to feed $petName: ${task.foodType}."
+        }
+
         val intent = Intent(context, FeedingReceiver::class.java).apply {
             putExtra("petName", petName)
+            putExtra("title", customTitle)
+            putExtra("message", customMessage)
             putExtra("foodType", task.foodType)
         }
 
@@ -105,13 +121,40 @@ class FeedingViewModel : ViewModel() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val calendar = Calendar.getInstance().apply {
-            val parts = task.time.split(":")
-            set(Calendar.HOUR_OF_DAY, parts[0].toInt())
-            set(Calendar.MINUTE, parts[1].toInt())
-            set(Calendar.SECOND, 0)
-            if (before(Calendar.getInstance())) add(Calendar.DATE, 1)
+        val sdf = SimpleDateFormat("yyyy-M-d HH:mm", Locale.getDefault())
+        val timeToParse = task.time.ifBlank { "09:00" }
+
+        val dateToParse = if (task.type == "Feeding") {
+            val today = SimpleDateFormat("yyyy-M-d", Locale.getDefault()).format(Date())
+            "$today $timeToParse"
+        } else {
+            "${task.date} $timeToParse"
         }
+
+        val parsedDate = sdf.parse(dateToParse) ?: return
+        val calendar = Calendar.getInstance().apply { time = parsedDate }
+
+
+        when (task.type) {
+            "Visit" -> {
+                calendar.add(Calendar.DAY_OF_YEAR, -1)
+            }
+            "Vaccine" -> {
+
+                if (task.recurrence == "6 Months" || task.recurrence == "1 Year") {
+                    calendar.add(Calendar.DAY_OF_YEAR, -7)
+                } else {
+                    calendar.add(Calendar.DAY_OF_YEAR, -1)
+                }
+            }
+            "Feeding" -> {
+                if (calendar.before(Calendar.getInstance())) {
+                    calendar.add(Calendar.DATE, 1)
+                }
+            }
+        }
+
+        if (calendar.timeInMillis < System.currentTimeMillis()) return
 
         try {
             alarmManager.setExactAndAllowWhileIdle(

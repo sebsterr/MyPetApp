@@ -3,8 +3,12 @@ package com.example.mypetapp.screens
 data class FeedingTask(
     val id: String = "",
     val petId: String = "",
-    val time: String = "08:00",
+    val time: String = "",
     val foodType: String = "",
     val quantity: String = "",
-    val isEnabled: Boolean = true
-)
+    val type: String = "Feeding",
+    val date: String = "",
+    val recurrence: String = "None"
+) {
+    constructor() : this("", "", "", "", "", "Feeding", "", "None")
+}

@@ -10,27 +10,32 @@ import androidx.core.app.NotificationCompat
 
 class FeedingReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val petName = intent.getStringExtra("petName") ?: "Animalul tău"
-        val foodType = intent.getStringExtra("foodType") ?: "mâncare"
+        val petName = intent.getStringExtra("petName") ?: "Your pet"
+        val foodType = intent.getStringExtra("foodType") ?: "food"
+
+
+        val notificationTitle = intent.getStringExtra("title") ?: "Feeding time for $petName!"
+        val notificationMessage = intent.getStringExtra("message") ?: "It's time for $foodType."
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channelId = "feeding_channel"
+
+        val channelId = "PET_CARE_CHANNEL"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Program Hrănire",
+                "Pet Care Schedule",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notificări pentru ora de masă a animalelor"
+                description = "Notifications for feeding, vaccines, and vet visits"
             }
             notificationManager.createNotificationChannel(channel)
         }
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Oră de masă pentru $petName!")
-            .setContentText("Este timpul pentru porția de $foodType.")
+            .setContentTitle(notificationTitle)
+            .setContentText(notificationMessage)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
