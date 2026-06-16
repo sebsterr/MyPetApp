@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,7 +23,7 @@ fun PetProfilesScreen(
     userEmail: String,
     onAddPetClick: () -> Unit,
     onPetClick: (String) -> Unit,
-    onLogout: () -> Unit
+    onProfileClick: () -> Unit
 ) {
     Scaffold(
         floatingActionButton = {
@@ -43,9 +43,20 @@ fun PetProfilesScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(userEmail, fontSize = 16.sp, style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = onLogout) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+                Text(
+                    text = userEmail,
+                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.clickable { onProfileClick() }
+                )
+
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Account Settings",
+                        modifier = Modifier.size(28.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 

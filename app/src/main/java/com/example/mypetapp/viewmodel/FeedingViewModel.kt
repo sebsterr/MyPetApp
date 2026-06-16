@@ -112,6 +112,8 @@ class FeedingViewModel : ViewModel() {
             putExtra("title", customTitle)
             putExtra("message", customMessage)
             putExtra("foodType", task.foodType)
+            putExtra("taskType", task.type)
+            putExtra("taskId", task.id)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

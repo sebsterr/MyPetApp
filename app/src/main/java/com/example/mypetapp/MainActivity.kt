@@ -20,6 +20,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        try {
+            com.google.firebase.FirebaseApp.initializeApp(this)
+            val firebaseAppCheck = com.google.firebase.appcheck.FirebaseAppCheck.getInstance()
+            firebaseAppCheck.installAppCheckProviderFactory(
+                com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
+            )
+            println("Aplicația rulează: App Check Debug Provider a fost instalat cu succes!")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val name = "Feeding Schedule"
             val descriptionText = "Notifications for pet feeding times"
@@ -32,6 +43,7 @@ class MainActivity : ComponentActivity() {
             val notificationManager = getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+
         setContent {
             MaterialTheme {
                 val viewModel: PetViewModel = viewModel()
@@ -40,12 +52,15 @@ class MainActivity : ComponentActivity() {
                 val aiViewModel: AiViewModel = viewModel()
 
                 val navController = rememberNavController()
-                val currentUser by viewModel.currentUser.collectAsState()
-                val pets by viewModel.pets.collectAsState()
+
+                val currentUserState by viewModel.currentUser.collectAsState()
+                val petsList by viewModel.pets.collectAsState()
+
+                val email = currentUserState?.email ?: ""
 
                 NavHost(
                     navController = navController,
-                    startDestination = if (currentUser == null) "login" else "pets"
+                    startDestination = if (currentUserState == null) "login" else "pets"
                 ) {
                     composable("login") {
                         LoginScreen(
@@ -60,17 +75,20 @@ class MainActivity : ComponentActivity() {
 
                     composable("pets") {
                         PetProfilesScreen(
-                            pets = pets,
-                            userEmail = currentUser?.email ?: "User",
+                            pets = petsList,
+                            userEmail = email,
                             onAddPetClick = { navController.navigate("addPet") },
-                            onPetClick = { petId ->
-                                navController.navigate("petDetails/$petId")
-                            },
-                            onLogout = {
-                                viewModel.logout {
-                                    navController.navigate("login") {
-                                        popUpTo("pets") { inclusive = true }
-                                    }
+                            onPetClick = { petId -> navController.navigate("petDetails/$petId") },
+                            onProfileClick = { navController.navigate("profile_screen") }
+                        )
+                    }
+
+                    composable("profile_screen") {
+                        ProfileScreen(
+                            viewModel = viewModel,
+                            onLogoutSuccess = {
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
                                 }
                             }
                         )
@@ -89,7 +107,7 @@ class MainActivity : ComponentActivity() {
                     ) { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId") ?: ""
 
-                        val pet = remember(pets, petId) { pets.find { it.id == petId } }
+                        val pet = remember(petsList, petId) { petsList.find { it.id == petId } }
 
                         if (pet != null) {
                             PetDetailsScreen(
@@ -109,7 +127,7 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("petId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId") ?: ""
-                        val pet = pets.find { it.id == petId }
+                        val pet = petsList.find { it.id == petId }
 
                         val petName = pet?.name ?: "My Pet"
 
@@ -129,7 +147,7 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("petId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val petId = backStackEntry.arguments?.getString("petId") ?: ""
-                        val pet = pets.find { it.id == petId }
+                        val pet = petsList.find { it.id == petId }
 
                         AddPetScreen(existingPet = pet) { name, type, breed, date, weight, gender, isNeutered, uri ->
                             if (pet != null) {

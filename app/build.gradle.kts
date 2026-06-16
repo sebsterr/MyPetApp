@@ -28,12 +28,14 @@ android {
             )
         }
     }
+
+    // 🚨 CORECTAT: Actualizat la Java 17 pentru compatibilitate cu SDK 36 și Gradle modern
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -52,12 +54,17 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
-    // Firebase
+
+    // Firebase Core & BOM
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
+
+    implementation("com.google.firebase:firebase-appcheck-debug")
+
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
     // Image Loading
     implementation(libs.coil.compose)
 
