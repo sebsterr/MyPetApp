@@ -88,7 +88,7 @@ fun PetDetailsScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             ) {
-                Text("Feeding Schedule & Notifications")
+                Text("Schedules & Notifications")
             }
 
 

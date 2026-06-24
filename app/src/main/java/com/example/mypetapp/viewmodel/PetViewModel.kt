@@ -29,11 +29,35 @@ class PetViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _fullName = MutableStateFlow("Loading...")
+    val fullName: StateFlow<String> = _fullName.asStateFlow()
+
     val pets: StateFlow<List<Pet>> = currentUser
         .flatMapLatest { user ->
             if (user != null) firestoreManager.getPets(user.uid)
             else flowOf(emptyList())
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    fun fetchUserFullName() {
+        val currentUser = authManager.currentUser
+        if (currentUser != null) {
+            val uid = currentUser.uid
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document != null && document.exists()) {
+                        _fullName.value = document.getString("fullName") ?: "Set your name"
+                    } else {
+                        _fullName.value = "Name unavailable"
+                    }
+                }
+                .addOnFailureListener {
+                    _fullName.value = "Error loading name"
+                }
+        }
+    }
 
     fun register(email: String, pass: String, name: String, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
@@ -57,9 +81,18 @@ class PetViewModel : ViewModel() {
 
     fun login(email: String, pass: String, activity: android.app.Activity, onResult: (String) -> Unit) {
         viewModelScope.launch {
-            _isLoading.value = true
 
-            when (val result = authManager.login(email, pass, activity)) {
+            val result = authManager.login(
+                email = email,
+                pass = pass,
+                activity = activity,
+                onAutoVerifySuccess = {
+                    _currentUser.value = authManager.currentUser
+                    onResult("SUCCESS")
+                }
+            )
+
+            when (result) {
                 is AuthManager.LoginResult.Success -> {
                     _currentUser.value = result.user
                     onResult("SUCCESS")
@@ -72,7 +105,6 @@ class PetViewModel : ViewModel() {
                     onResult("FAILURE")
                 }
             }
-            _isLoading.value = false
         }
     }
 
@@ -219,6 +251,7 @@ class PetViewModel : ViewModel() {
             _isLoading.value = false
         }
     }
+
     fun checkEmailVerificationStatus(onResult: (Boolean) -> Unit) {
         val user = authManager.currentUser
         if (user != null) {
@@ -236,6 +269,7 @@ class PetViewModel : ViewModel() {
             onResult(false)
         }
     }
+
     fun sendVerificationEmail(onResult: (Boolean) -> Unit) {
         val user = authManager.currentUser
         if (user != null) {
@@ -248,6 +282,7 @@ class PetViewModel : ViewModel() {
             onResult(false)
         }
     }
+
     fun deletePet(petId: String) {
         viewModelScope.launch {
             firestoreManager.deletePet(petId)

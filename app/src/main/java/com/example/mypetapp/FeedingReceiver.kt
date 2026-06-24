@@ -11,7 +11,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import java.util.Calendar
 
-class FeedingReceiver : BroadcastReceiver() {
+class   FeedingReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val petName = intent.getStringExtra("petName") ?: "Your pet"
         val foodType = intent.getStringExtra("foodType") ?: "food"

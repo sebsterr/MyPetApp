@@ -26,8 +26,18 @@ fun ProfileScreen(
 
     val userState by viewModel.currentUser.collectAsState()
 
+    val fullNameFromDb by viewModel.fullName.collectAsState()
+
+    LaunchedEffect(userState?.uid) {
+        if (userState != null) {
+            viewModel.fetchUserFullName()
+            viewModel.checkEmailVerificationStatus { }
+        }
+    }
+
     val email = userState?.email ?: "No email available"
-    val displayName = userState?.displayName ?: "Pet Owner"
+
+    val displayName = fullNameFromDb
 
     val isLoading by viewModel.isLoading.collectAsState()
 
@@ -63,7 +73,9 @@ fun ProfileScreen(
         ) {
             Card(
                 shape = ShapeDefaults.Large,
-                modifier = Modifier.size(100.dp).padding(8.dp),
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(8.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
             ) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -80,7 +92,13 @@ fun ProfileScreen(
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
-                enabled = false
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -92,7 +110,13 @@ fun ProfileScreen(
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
-                enabled = false
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -102,7 +126,9 @@ fun ProfileScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {

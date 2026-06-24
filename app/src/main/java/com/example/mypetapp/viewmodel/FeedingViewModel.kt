@@ -156,16 +156,16 @@ class FeedingViewModel : ViewModel() {
             }
         }
 
-        if (calendar.timeInMillis < System.currentTimeMillis()) return
+            if (calendar.timeInMillis < System.currentTimeMillis()) return
 
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                pendingIntent
-            )
-        } catch (e: SecurityException) {
-            e.printStackTrace()
-        }
+            try {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
+            } catch (e: SecurityException) {
+                e.printStackTrace()
+            }
     }
 }

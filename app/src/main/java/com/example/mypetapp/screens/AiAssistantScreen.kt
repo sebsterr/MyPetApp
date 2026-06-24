@@ -29,6 +29,7 @@ fun AiAssistantScreen(
 
     val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
     val todayDate = formatter.format(java.util.Date())
+
     LaunchedEffect(petContext) {
             val promptTemplate = """
             You are PetAI, an expert virtual veterinary assistant. 

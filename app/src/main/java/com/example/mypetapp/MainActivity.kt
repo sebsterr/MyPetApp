@@ -20,17 +20,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            com.google.firebase.FirebaseApp.initializeApp(this)
-            val firebaseAppCheck = com.google.firebase.appcheck.FirebaseAppCheck.getInstance()
-            firebaseAppCheck.installAppCheckProviderFactory(
-                com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
-            )
-            println("Aplicația rulează: App Check Debug Provider a fost instalat cu succes!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             val name = "Feeding Schedule"
             val descriptionText = "Notifications for pet feeding times"

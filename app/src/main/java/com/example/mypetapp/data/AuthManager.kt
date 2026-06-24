@@ -12,7 +12,9 @@ import com.google.firebase.auth.PhoneMultiFactorGenerator
 import com.google.firebase.auth.PhoneMultiFactorInfo
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 class AuthManager {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private var mfaSignInVerificationId: String = ""
@@ -26,18 +28,22 @@ class AuthManager {
         data class Failure(val exception: Exception) : LoginResult()
     }
 
-    suspend fun login(email: String, pass: String, activity: android.app.Activity): LoginResult {
+    suspend fun login(
+        email: String,
+        pass: String,
+        activity: android.app.Activity,
+        onAutoVerifySuccess: () -> Unit
+    ): LoginResult {
         return try {
             val result = auth.signInWithEmailAndPassword(email, pass).await()
             LoginResult.Success(result.user!!)
         } catch (e: FirebaseAuthMultiFactorException) {
             multiFactorResolver = e.resolver
 
-
             val phoneHint = multiFactorResolver?.hints?.firstOrNull() as? PhoneMultiFactorInfo
             val hintText = phoneHint?.phoneNumber ?: "your registered phone"
 
-            sendMfaSms(activity)
+            sendMfaSms(activity, onAutoVerifySuccess)
 
             LoginResult.Requires2FA(hintText)
         } catch (e: Exception) {
@@ -45,7 +51,10 @@ class AuthManager {
         }
     }
 
-    private fun sendMfaSms(activity: android.app.Activity) {
+    private fun sendMfaSms(
+        activity: android.app.Activity,
+        onAutoVerifySuccess: () -> Unit
+    ) {
         val resolver = multiFactorResolver ?: return
         val hints = resolver.hints
         val phoneHint = hints.firstOrNull() as? PhoneMultiFactorInfo ?: return
@@ -56,8 +65,28 @@ class AuthManager {
             .setTimeout(60L, TimeUnit.SECONDS)
             .setActivity(activity)
             .setCallbacks(object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                override fun onVerificationCompleted(credential: PhoneAuthCredential) {}
-                override fun onVerificationFailed(e: FirebaseException) { e.printStackTrace() }
+
+                override fun onVerificationCompleted(credential: PhoneAuthCredential) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            val currentResolver = multiFactorResolver ?: return@launch
+                            val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
+                            currentResolver.resolveSignIn(assertion).await()
+
+                            multiFactorResolver = null
+                            mfaSignInVerificationId = ""
+
+                            onAutoVerifySuccess()
+
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+
+                override fun onVerificationFailed(e: FirebaseException) {
+                    e.printStackTrace()
+                }
 
                 override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
                     mfaSignInVerificationId = verificationId
@@ -67,7 +96,6 @@ class AuthManager {
 
         PhoneAuthProvider.verifyPhoneNumber(options)
     }
-
     suspend fun verify2FACode(smsCode: String): Result<FirebaseUser> {
         return try {
             val resolver = multiFactorResolver ?: return Result.failure(Exception("No 2FA session found"))
@@ -94,13 +122,13 @@ class AuthManager {
     ) {
         val user = auth.currentUser
         if (user == null) {
-            onFailure(Exception("Utilizatorul nu este autentificat pentru a activa 2FA."))
+            onFailure(Exception("No user logged in for 2FA"))
             return
         }
 
         user.multiFactor.session.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
-                onFailure(task.exception ?: Exception("Nu s-a putut genera sesiunea MFA."))
+                onFailure(task.exception ?: Exception("Could not generate MFA."))
                 return@addOnCompleteListener
             }
 
@@ -136,7 +164,7 @@ class AuthManager {
             val credential = PhoneAuthProvider.getCredential(verificationId, smsCode)
             val assertion = PhoneMultiFactorGenerator.getAssertion(credential)
 
-            user.multiFactor.enroll(assertion, "Stăpân de animal").await()
+            user.multiFactor.enroll(assertion, "pet owner").await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -146,13 +174,13 @@ class AuthManager {
     suspend fun register(email: String, pass: String): Result<FirebaseUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, pass).await()
-            val user = result.user
+                val user = result.user
 
             if (user != null) {
                 user.sendEmailVerification().await()
                 Result.success(user)
             } else {
-                Result.failure(Exception("Utilizatorul este null"))
+                Result.failure(Exception("User is null"))
             }
         } catch (e: Exception) {
             Result.failure(e)
