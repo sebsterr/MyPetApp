@@ -9,21 +9,20 @@ Adresa Repository: https://github.com/sebsterr/PetCareSmart
 2. Pasii de compilare ai aplicatiei
 Pentru a compila aplicatia din codul sursa, este necesar un mediu de dezvoltare configurat pentru Android.
 
-Cerinte preliminare:
-IDE: Android Studio (versiunea recomandata: minim Iguana sau Jellyfish).
-
-SDK: Android SDK configurat (Target API minim: 34).
+Cerinte:
+IDE: Android Studio.
+SDK: Android SDK configurat.
 
 Pasi de urmat:
 Clonarea proiectului:
 Deschideti terminalul sau Git Bash si rulati comanda:
-git clone [https://github.com/sebsterr/PetCareSmart.git](https://github.com/sebsterr/PetCareSmart.git)
+git clone https://github.com/sebsterr/PetCareSmart.git
 
 Deschiderea in Android Studio:
 Lansati Android Studio, selectati File -> Open si navigati catre folderul unde ati clonat proiectul (asigurati-va ca selectati folderul care contine fisierul build.gradle.kts principal).
 
 Sincronizarea dependentelor:
-Faceti click pe butonul "Sync Project with Gradle Files" (pictograma cu elefant) din bara superioara a Android Studio pentru a descarca toate librariile necesare (Jetpack Compose, Firebase, WorkManager, etc.).
+Faceti click pe butonul "Sync Project with Gradle Files" din bara superioara a Android Studio pentru a descarca toate librariile necesare (Jetpack Compose, Firebase, WorkManager, etc.).
 
 Compilarea codului (Build):
 Dupa finalizarea sincronizarii, din meniul superior selectati Build -> Make Project (sau folositi scurtatura Ctrl + F9). Verificatorul de erori va confirma ca aplicatia s-a compilat cu succes.
@@ -34,9 +33,9 @@ Lansarea aplicatiei se poate face fie pe un dispozitiv fizic, fie pe un emulator
 Rularea prin Android Studio 
 Configurarea dispozitivului:
 
-Emulator: Porniti un dispozitiv virtual din Device Manager (recomandat un emulator cu Google Play Services activat).
+Emulator: Porniti un dispozitiv virtual din Device Manager.
 
-Dispozitiv fizic: Conectati telefonul prin cablu USB si asigurati-va ca modul USB Debugging (Depanare USB) este activat din optiunile dezvoltatorului (Developer Options).
+Dispozitiv fizic: Conectati telefonul prin cablu USB si asigurati-va ca modul USB Debugging este activat din Developer Options.
 
 Lansarea:
 
